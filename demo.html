@@ -103,7 +103,7 @@
 				W = b.width = 0 | H * innerWidth / innerHeight;
 				c.translate(W / 2, H / 2);
 				c.shadowBlur = 24;
-				vines.foreach(v => {
+				vines.forEach(v => {
 					c.shadowColor =
 					c.strokeStyle = 'hsl(' + (v.a * 60 | 0) + ',100%,' + (60 + v.w * 5) + '%)';
 					if (v.w == 8) {
