@@ -73,7 +73,8 @@
 						v.x += dx;
 						v.y += dy;
 						v.a += v.ai / v.w / 2;
-						v.p.splice(0, v.p.length - 60);
+						v.p.splice(0, v.p.length - v.l);
+						v.p.splice(0, v.p.length - 60 * 5);
 						v.p.push({
 							x: v.x,
 							y: v.y,
@@ -83,15 +84,15 @@
 						if (frame % 30 == 0) {
 							v.ai = Math.random() - 0.5;
 						}
-						if (v.w > 1 && Math.random() < v.l / 16834 - 2) {
+						if (v.w > 1 && Math.random() < v.l / 16834) {
 							vines.push({
 								x: v.x,
 								y: v.y,
 								a: v.a,
 								ai: v.ai,
-								w: v.w,
+								w: v.w / 2,
 								p: [],
-								l: Math.min * v.w | v.w * 32 * (1 + Math.random())
+								l: Math.min(v.l, 0 | v.w * 32 * (1 + Math.random()))
 							});
 						}
 					});
