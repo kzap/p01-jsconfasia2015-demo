@@ -14,7 +14,7 @@
 		<audio id="a"></audio>
 		<script>
 		c = b.getContext('2d');
-		MAX = 96*60;
+		MAX = 24;
 		onload = function update() {
 			requestAnimationFrame(update);
 
@@ -30,7 +30,7 @@
 					ai: 0,
 					w: 8,
 					p: [],
-					l: MAX
+					l: MAX * 60
 				}];
 				noteIndex = 0;
 				notesFreq = [155,195,261,155,233,155,195,207,195,
@@ -46,69 +46,86 @@
 					195,261,233,155,195,261,155,195,207,195,261];
 				str = '';
 				s = !a.src;
+			}
 
-				// time update
-				currentTime = s ? MAX : a.currentTime;
-				while (time < currentTime) { 
-					while (time < timeNextFrame) {
-						if (s) {
-							//frac = (time & 8 / time * 6 : time /4) % 1;
-							frac = (time & 8 ? time * 6 : time /4) % 1;
-							noteIndex += frac == 0;
-							v = (time * notesFreq[noteIndex&127] %1) * (1-frac) * (32 + 8 * Math.sin(time));
-							v += (Math.sin(time * notesFreq[time >> 2]) * Math.PI * 2) * (24);
+			// time update
+			currentTime = s ? MAX : a.currentTime;
+			while (time < currentTime) { 
+				masterAmplitude = Math.min(1, 16* Math.sin(time / MAX * Math.PI));
 
-							str += String.fromCharCode(v + 127);
-						}
-						time += 1 / 16384;
+				while (time < timeNextFrame) {
+					if (s) {
+						//frac = (time & 8 / time * 6 : time /4) % 1;
+						frac = (time & 8 ? time * 6 : time /4) % 1;
+						noteIndex += frac == 0;
+						v = (time * notesFreq[noteIndex&127] %1) * (1-frac) * (32 + 8 * Math.sin(time));
+						v += Math.sin(time * notesFreq[time >> 2] * Math.PI * 2) * 24;
+
+						str += String.fromCharCode(127 + v * masterAmplitude);
+
+						//str += String.fromCharCode(127);
 					}
-					frame++;
-					timeNextFrame += 1/60;
+					time += 1 / 16384;
+				}
+				frame++;
+				timeNextFrame += 1/60;
 
-					// update visual
-					vines = vines.filter(v => v.l--);
-					vines.forEach(v => {
-						dx = Math.cos(v.a) * v.w / 2;
-						dy = Math.sin(v.a) * v.w / 2;
-						v.x += dx;
-						v.y += dy;
-						v.a += v.ai / v.w / 2;
-						v.p.splice(0, v.p.length - v.l);
-						v.p.splice(0, v.p.length - 60 * 5);
-						v.p.push({
+				// update visual
+				vines = vines.filter(v => v.l--);
+				vines.forEach(v => {
+					dx = Math.cos(v.a) * v.w / 2;
+					dy = Math.sin(v.a) * v.w / 2;
+					v.x += dx;
+					v.y += dy;
+					v.a += v.ai / v.w / 2;
+					v.p.splice(0, v.p.length - v.l);
+					v.p.splice(0, v.p.length - 60 * 5);
+					v.p.push({
+						x: v.x,
+						y: v.y,
+						dx: dx,
+						dy: dy
+					});
+					if (frame % 30 == 0) {
+						v.ai = Math.random() - 0.5;
+					}
+					if (v.w > 1 && Math.random() < v.l / 16834) {
+						vines.push({
 							x: v.x,
 							y: v.y,
-							dx: dx,
-							dy: dy
+							a: v.a,
+							ai: v.ai,
+							w: v.w / 2,
+							p: [],
+							l: Math.min(v.l, 0 | v.w * 32 * (1 + Math.random()))
 						});
-						if (frame % 30 == 0) {
-							v.ai = Math.random() - 0.5;
-						}
-						if (v.w > 1 && Math.random() < v.l / 16834) {
-							vines.push({
-								x: v.x,
-								y: v.y,
-								a: v.a,
-								ai: v.ai,
-								w: v.w / 2,
-								p: [],
-								l: Math.min(v.l, 0 | v.w * 32 * (1 + Math.random()))
-							});
-						}
-					});
-				};
+					}
+				});
+			};
+
+			if (s) {
+				a.src = 'data:audio/wav;base64,'
+					+ 'UklGRiQAAABXQVZFZm10IBAAAAABAAEAA'
+					+ 'EAAAABA'
+					+ 'AAABAAgAZGF0YQAAAAAA' + btoa(str);
+				a.play();
+				time = 0;
+
+			} else {
 
 				// render visual
 				H = b.height = 512;
 				W = b.width = 0 | H * innerWidth / innerHeight;
 				c.translate(W / 2, H / 2);
 				c.shadowBlur = 24;
+				//vines.reverse().forEach(v => {
 				vines.forEach(v => {
+					//c.lineWidth = v.w;
 					c.shadowColor =
 					c.strokeStyle = 'hsl(' + (v.a * 60 | 0) + ',100%,' + (60 + v.w * 5) + '%)';
 					if (v.w == 8) {
 						c.rotate(v.a);
-						c.drawImage(img, frame * 4&112, 0, 16, 24, -8, 0,-16, -24);
+						//c.drawImage(img, frame * 4&112, 0, 16, 24, -8, 0,-16, -24);
 						c.rotate(-v.a);
 						c.translate(-v.x, -v.y);
 					}
@@ -121,8 +138,10 @@
 					}
 					c.stroke();
 				});
+				//vines.reverse();
 			}
 		}
+		
 		</script>
 	</canvas>
 </body>
